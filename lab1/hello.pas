@@ -1,5 +1,12 @@
 program Hello;
 
+
+var
+  i: Integer;
+
 begin
-  WriteLn('Hello, student!');
+  for i := 1 .. 10 do
+  begin
+    WriteLn(i);
+  end;
 end.
