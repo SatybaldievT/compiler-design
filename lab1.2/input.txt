@@ -1,0 +1,4 @@
+/while/ /x/ := 42 // Это комментарий
+/do/ /y/ := 100
+/end/
+invalid_token
