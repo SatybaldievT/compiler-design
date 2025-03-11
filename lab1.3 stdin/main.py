@@ -4,11 +4,14 @@ import sys
 import unicodedata
 from enum import Enum
 class Position:
-    def __init__(self, text):
-        self.text = text
+    def __init__(self, stdin):
+        self.stdin = stdin
         self.line = 1
         self.pos = 1
-        self.index = 0
+        self.prev = self.stdin.read(1)
+        self.next = self.stdin.read(1)
+        self.prev1 = None
+        self.prev2 = None 
     def update_text(self, new_text):
         """
         Обновляет текст и сбрасывает индекс, но сохраняет текущие значения line и pos.
@@ -31,19 +34,13 @@ class Position:
     def pos(self, value):
         self._pos = value
 
-    @property
-    def index(self):
-        return self._index
-
-    @index.setter
-    def index(self, value):
-        self._index = value
+   
 
     @property 
     def cp(self):
-        if self.index == len(self.text):
+        if not self.prev:
             return -1
-        return ord(self.text[self.index])
+        return ord(self.prev)
 
     @property
     def uc(self):
@@ -53,7 +50,7 @@ class Position:
 
     @property
     def is_white_space(self):
-        return self.index != len(self.text) and self.text[self.index].isspace()
+        return self.prev  and self.prev.isspace()
 
     @property
     def is_letter(self):
@@ -69,77 +66,38 @@ class Position:
 
     @property
     def is_new_line(self):
-        if self.index == len(self.text):
+        if not self.prev:
             return True
-        if self.text[self.index] == '\r' and self.index + 1 < len(self.text):
-            return self.text[self.index + 1] == '\n'
-        return self.text[self.index] == '\n'
+        if self.prev == '\r' and self.next:
+            return self.next == '\n'
+        return self.prev == '\n'
 
     def __iadd__(self, other):
-        if self.index < len(self.text):
+        self.prev2 = self.prev1
+        self.prev1 = self.prev
+        self.prev = self.next
+        if self.prev:
+            self.next = self.stdin.read(1)
+            
             if self.is_new_line:
-                if self.text[self.index] == '\r':
-                    self.index += 1
+                if self.prev == '\r':
+                    self.prev = self.next
+                    self.next = self.stdin.read(1)
                 self.line += 1
                 self.pos = 1
             else:
-                if unicodedata.category(self.text[self.index]) == 'Cs':
-                    self.index += 1
+                if unicodedata.category(self.prev) == 'Cs':
+                    self.prev = self.next
+                    self.next = self.stdin.read(1)
                 self.pos += 1
-            self.index += 1
+            
         return self
     def __isub__(self, other):
-        """Перемещает позицию назад на `other` символов."""
-        for _ in range(other):
-            if self.index <= 0:
-                break  # Нельзя уйти ниже нулевого индекса
-            self.index -= 1  # Перемещаемся на один символ назад
-
-            # Если текущий символ — это символ новой строки, обновляем line и pos
-            if self.index > 0 and self.text[self.index - 1] == '\n':
-                self.line -= 1
-                # Вычисляем pos как длину строки до текущего символа
-                self.pos = self.text.rfind('\n', 0, self.index - 1)
-                if self.pos == -1:
-                    self.pos = self.index
-                else:
-                    self.pos = self.index - self.pos - 1
-            elif self.index > 0 and self.text[self.index - 1] == '\r':
-                # Обработка случая с \r\n
-                if self.index > 1 and self.text[self.index - 2] == '\n':
-                    self.line -= 1
-                    self.pos = self.text.rfind('\n', 0, self.index - 2)
-                    if self.pos == -1:
-                        self.pos = self.index - 1
-                    else:
-                        self.pos = self.index - self.pos - 2
-                else:
-                    self.line -= 1
-                    self.pos = 1
-            else:
-                self.pos -= 1
-        return self
+        raise 
 
     def __str__(self):
         return f"({self.line}, {self.pos})"
 
-    def __lt__(self, other):
-        return self.index < other.index
-
-    def __eq__(self, other):
-        return self.index == other.index
-
-    def __le__(self, other):
-        return self.index <= other.index
-
-    def __gt__(self, other):
-        return self.index > other.index
-
-    def __ge__(self, other):
-        return self.index >= other.index
-
-    def __ne__(self, other):
-        return self.index != other.index
 class Fragment:
     def __init__(self, starting, following):
         self._starting = copy.copy(starting)  # Копируем starting
@@ -281,11 +239,11 @@ class SpecToken(Token):
         super().__init__(tag, starting, following)
 #dsfdsf
 class Lexer:
-    def __init__(self, text):
-        self.cur = Position(text)  # Текущая позиция в тексте
+    def __init__(self, stdin):
+        self.cur = Position(stdin)  # Текущая позиция в тексте
         self.messages = []
         self.comments = []
-
+        self.have_open_comment_error  = False
     def next_token(self):
 
         while True:
@@ -325,16 +283,25 @@ class Lexer:
         self.cur += 1
         content = ""
         while self.cur.cp != -1:
-            _cur = copy.copy(self.cur)
-            _cur += 1
-            if chr(self.cur.cp) == '(' and chr(_cur.cp) == '*':
-                self.cur -= 1
-                self.cur -= 1
-                raise ValueError("Nested comments are not allowed")
-            if chr(self.cur.cp) == '*' and chr(_cur.cp) == ')':
-                self.cur += 1  # Пропускаем '*)'
+            
+            if chr(self.cur.cp) == '(' :
                 self.cur += 1
-                return CommentToken(content, start, self.cur)
+                if chr(self.cur.cp) == '*':
+                    self.cur += 1
+                    raise ValueError("Nested comments are not allowed")
+                else :
+                    content += '('
+                    content += chr(self.cur.cp)
+            if chr(self.cur.cp) == '*':
+                self.cur += 1
+                if chr(self.cur.cp) == ')':
+                    self.cur += 1
+                    return CommentToken(content, start, self.cur)
+                  # Пропускаем '*)'
+                else:
+                    content += '*'
+                    content += chr(self.cur.cp)
+                
             content += chr(self.cur.cp)
             self.cur += 1
         raise ValueError("Unclosed comment")
@@ -398,15 +365,15 @@ class Lexer:
             while self.cur.is_white_space:
                 self.cur += 1
 
-            start = Position("")  # Начальная позиция токена
-            start.line, start.pos, start.index = self.cur.line, self.cur.pos, self.cur.index
+            start = copy.copy(self.cur)  # Начальная позиция токена
+            
 
             if self.cur.cp == -1:
                 break
 
             # Обработка комментариев
-            
-
+            if self.have_open_comment_error:
+                return self._skip_comment(start)
             # Обработка символов с использованием match
             match chr(self.cur.cp):
                 case '{':
@@ -450,7 +417,7 @@ ds
 text2 = "(* (* Comment *)"
 
 # Инициализация текущей позиции
-lex = Lexer(text)
+lex = Lexer(sys.stdin)
 token = lex.next_token()
 
 while token.tag != DomainTag.END_OF_PROGRAM:
@@ -460,7 +427,7 @@ for error_message in lex.messages:
     print(f"Error_message: {error_message}")
 
 for comment in lex.comments:
-    print(f"Comment: {error_message}")
+    print(f"Comment: {comment}")
 # Вывод:
 # LPAREN (1, 1)-(1, 2)
 # PLUS (1, 3)-(1, 4)
