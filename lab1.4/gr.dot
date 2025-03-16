@@ -1,0 +1,167 @@
+digraph G {
+    
+    "Start";
+    "WhiteSpace" [shape="doubleoctagon"];
+    "Number" [shape="doubleoctagon"];
+    "IDENT" [shape="doubleoctagon"];
+    "I" [shape="doubleoctagon"];
+    "F" [shape="doubleoctagon"];
+    "n" [shape="doubleoctagon"];
+    "l" [shape="doubleoctagon"];
+    "t" [shape="doubleoctagon"];
+    
+    "e" [shape="doubleoctagon"];
+    "g" [shape="doubleoctagon"];
+    "e1" [shape="doubleoctagon"];
+    "Integer" [shape="doubleoctagon"];
+    
+    
+    "o" [shape="doubleoctagon"];
+    "a" [shape="doubleoctagon"];
+    "Float" [shape="doubleoctagon"];
+    "{";
+    "-";
+    "cloop";
+    "_";
+    "Comment" [shape="doubleoctagon"];
+    ":";
+    "::" [shape="doubleoctagon"];
+    "-.>";
+    "->" [shape="doubleoctagon"];
+    "=" [shape="doubleoctagon"];
+    "Start" -> "WhiteSpace" [label="[\\s\\t\\n\\r]"];
+    "Start" -> "I" [label="I"];
+    "Start" -> "F" [label="F"];
+    
+    "Start" -> "=" [label="="];
+    "Start" -> "{" [label="{"];
+    "Start" -> "IDENT" [label="(?![IF])[A-Za-z]"];
+    "Start" -> "Number" [label="[0-9]"];
+    "Start" -> "-.>" [label="-"];
+    "WhiteSpace" -> "WhiteSpace" [label="[\\s\\t\\n\\r]"];
+    "Number" -> "Number" [label="[0-9]"];
+    "IDENT" -> "IDENT" [label="(?![IF])[A-Za-z0-9]"];
+  
+    
+    
+    
+    
+   
+    
+    subgraph cluster2{
+    "{" -> "-" [label="-"];
+    "-" -> "_" [label="-"];
+    "-" -> "cloop" [label="[^-]"];
+    "cloop" -> "_" [label="-"];
+    "cloop" -> "cloop" [label="[^-]"];
+    "_" -> "cloop" [label="[^-}]"];
+    "_" -> "_" [label="-"];
+    "_" -> "Comment" [label="}"];
+    }
+    "Start" -> ":" [label=":"];
+    subgraph cluster0{
+    ":" -> "::" [label=":"];
+    }
+    subgraph cluster1{
+    "-.>" -> "->" [label=">"];
+    }
+
+   
+  
+    
+    subgraph clusterIdent{
+    "IDENT__" [shape=point, width=0.01, height=0.01]
+    "IDENT__" -> "IDENT" [label="(?![IFl])[A-Za-z0-9]"];
+    
+    "IDENT_" -> "IDENT" ;
+    }
+    subgraph clusterInt{
+    subgraph cluster31{
+    "I" -> "n" [label="n"];
+    "n" -> "t" [label="t"];
+    "t" -> "e" [label="e"];
+    "e" -> "g" [label="g"];
+    "g" -> "e1" [label="e"];
+    "e1" -> "Integer" [label="r"];
+    }
+    subgraph ads{
+    "IDENT1__" [shape=point, width=0.01, height=0.01]
+    "IDENT2_" [shape=point, width=0.01, height=0.01]
+    }
+    subgraph ads{
+    "IDENT1__" -> "I" [label= "I"]   
+    "IDENT_" [shape=point, width=0.01, height=0.01]    
+    "I" -> "IDENT_" [ arrowhead="none"];
+    "t" -> "IDENT_" [ arrowhead="none"];
+    "g" -> "IDENT_" [ arrowhead="none"];
+    "e1" -> "IDENT_" [ arrowhead="none"];
+    "n" -> "IDENT_" [ arrowhead="none"];
+    "e" -> "IDENT_" [ arrowhead="none"];
+    "Integer" -> "IDENT_" [ arrowhead="none"];
+    
+    }
+    "I" -> "I" [ arrowhead="none"];
+    "t" -> "I" [ arrowhead="none"];
+    "g" -> "I" [ arrowhead="none"];
+    "e1" -> "I" [ arrowhead="none"];
+    "n" -> "I" [ arrowhead="none"];
+    "e" -> "I" [ arrowhead="none"];
+    "Integer" -> "I" [ arrowhead="none"];
+    
+    
+     "IDENT2_" -> "I"  [ arrowhead="none"];
+    "IDENT2_" -> "t" [ arrowhead="none"];
+    "IDENT2_" -> "g" [ arrowhead="none"];
+    "IDENT2_" -> "e1" [ arrowhead="none"];
+    "IDENT2_" -> "n" [ arrowhead="none"];
+    "IDENT2_" -> "e" [ arrowhead="none"];   
+    "IDENT2_" -> "Integer" [ arrowhead="none"];
+    }
+    subgraph clusterFLoat{
+        "IDENT2_" -> "F" [label= "F"]
+        "F" -> "l" [label="l"];
+        "l" -> "o" [label="o"];
+        "o" -> "a" [label="a"];
+        "a" -> "Float" [label="t"];
+       
+        "F" -> "IDENT__" [arrowhead="none"];
+        
+        
+        "l" -> "IDENT__" [arrowhead="none"];
+        
+        "o" -> "IDENT__" [arrowhead="none"];
+       
+        "a" -> "IDENT__" [arrowhead="none"];
+        "Float" -> "IDENT__" [arrowhead="none"];
+       
+        "F" -> "IDENT1__" [arrowhead="none"];
+        
+        
+        "l" -> "IDENT1__" [arrowhead="none"];
+        
+        "o" -> "IDENT1__" [arrowhead="none"];
+       
+        "a" -> "IDENT1__" [arrowhead="none"];
+        "Float" -> "IDENT1__" [arrowhead="none"];
+        
+        "F" -> "F" [arrowhead="none"];
+        
+        
+        "l" -> "F" [arrowhead="none"];
+        
+        "o" -> "F" [arrowhead="none"];
+       
+        "a" -> "F" [arrowhead="none"];
+        "Float" -> "F" [arrowhead="none"];
+    }
+ 
+  
+    
+        
+    
+        
+    
+        
+
+    
+}

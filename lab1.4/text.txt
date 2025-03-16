@@ -1,0 +1,14 @@
+{-asdasdasdasdasd-} :: -> Integer Integ
+{- multi stoke comment
+asdasdasdasdasdasda
+
+asdasdasdasdasdasda
+das
+
+
+sdadda
+asd23
+123
+
+12{}".;./'---
+-}
