@@ -37,7 +37,7 @@ class Graph:
         dot =  "digraph G {\n"
         for vertex in self.graph:
             if vertex in self.final:
-                dot += f'    "{vertex}" [style="doubleoctagon"];\n'
+                dot += f'    "{vertex}" [shape="doubleoctagon"];\n'
             else :
                 dot += f'    "{vertex}";\n'
 
@@ -131,52 +131,29 @@ def graph_init():
    ("Number","Number", r'[0-9]'),
    ("Start","IDENT", r'(?![IF])[A-Za-z]'),
    ("Start","I", r'I'),
+   ("Start","F", r'F'),
    ("I","n", r'n'),
-   ("I","I", r'I'),
    ("I","IDENT", r'(?![IFn])[A-Za-z0-9]'),
    ("n","t", r't'),
-   ("n","I", r'I'), #
-   ("n","F", r'F'),
    ("n","IDENT", r'(?![IFt])[A-Za-z0-9]'),
    ("t","e", r'e'),
-   ("t","I", r'I'), #
-   ("t","F", r'F'),
    ("t","IDENT", r'(?![IFe])[A-Za-z0-9]'),
    ("e","g", r'g'),
-   ("e","I", r'I'), #
-   ("e","F", r'F'),
    ("e","IDENT", r'(?![IFg])[A-Za-z0-9]'),
    ("g","e1", r'e'),
-   ("g","I", r'I'), #
-   ("g","F", r'F'),
    ("g","IDENT", r'(?![IFe])[A-Za-z0-9]'),
    ("e1","Integer", r'r'),
-   ("e1","I", r'I'), #
-   ("e1","F", r'F'),
    ("e1","IDENT", r'(?![IFr])[A-Za-z0-9]'),
    ("Integer","IDENT", r'(?![IF])[A-Za-z0-9]'),
-   ("Integer","I", r'I'), #
-   ("Integer","F", r'F'),
-   ("Start", "F", r'F'),
    ("F", "l", r'l'),
-   ("F","I", r'I') ,#
-   ("F","F", r'F'),
    ("F", "IDENT", r'(?![IFl])[A-Za-z0-9]'),
    ("l", "o", r'o'),
-   ("l","I", r'I'), #
-   ("l","F", r'F'),
    ("l", "IDENT", r'(?![IFo])[A-Za-z0-9]'),
    ("o", "a", r'a'),
-   ("o","I", r'I'), #
-   ("o","F", r'F'),
    ("o", "IDENT", r'(?![IFa])[A-Za-z0-9]'),
    ("a", "Float", r't'),
-   ("a","I", r'I') ,#
-   ("a","F", r'F'),
    ("a", "IDENT", r'(?![IFt])[A-Za-z0-9]'),
    ("Float", "IDENT",r'(?![IF])[A-Za-z0-9]') , 
-   ("Float","I", r'I'), #
-   ("Float","F", r'F'),
    ("IDENT","IDENT",r'(?![IF])[A-Za-z0-9]'),
    ("Start","{", r'{'),
    ("{","-", r'-'),
@@ -216,7 +193,7 @@ def graph_init():
     list(map(lambda args: g.add_final_vertices(*args), final))
     return g    
 g = graph_init()
-print(g.csacademy_format())
+print(g)
 # input_string = ""
 # with open('text.txt', 'r', encoding='utf-8') as file:
 #     # Читаем содержимое файла в строку
