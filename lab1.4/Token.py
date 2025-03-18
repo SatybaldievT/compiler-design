@@ -181,12 +181,8 @@ class DomainTag(Enum):
     IDENT = 0          # Идентификатор
     NUMBER = 1         # Число
     COMMENT = 2 
-    Integer = 3
-    Float = 4
-    DOUBLE_COLON = 5
-    EQUALS = 6
-    ARROW = 7
-    ERROR = 98
+    KeyWord = 3
+    OP = 4
     END_OF_PROGRAM = 99
     WhiteSpace = 100
   

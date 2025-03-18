@@ -29,7 +29,7 @@ COMMENT {- .* -}
 
 
 Файл `Token.py`:
-```python
+``` python
 from abc import abstractmethod
 import copy
 import sys
@@ -213,12 +213,8 @@ class DomainTag(Enum):
     IDENT = 0          # Идентификатор
     NUMBER = 1         # Число
     COMMENT = 2 
-    Integer = 3
-    Float = 4
-    DOUBLE_COLON = 5
-    EQUALS = 6
-    ARROW = 7
-    ERROR = 98
+    KeyWord = 3
+    OP = 4
     END_OF_PROGRAM = 99
     WhiteSpace = 100
   
@@ -244,9 +240,7 @@ class Token():
     
     def __str__(self):
         return f"{self.tag.name} {self.coords}: {self.get_value}"
-
 ```
-
 Файл `main.py`:
 ```python
 from enum import Enum
@@ -352,7 +346,7 @@ class Graph:
         edges = []
         for vertex in self.graph:
             for adjacent_vertex in self.graph[vertex]:
-                if (adjacent_vertex, vertex) not in edges:  
+                if (adjacent_vertex, vertex) not in edges:  # Чтобы избежать дублирования в неориентированном графе
                     edges.append((vertex, adjacent_vertex))
         return edges
 
@@ -510,17 +504,17 @@ def graph_init():
     ("e",DomainTag.IDENT),
     ("g",DomainTag.IDENT),
     ("e1",DomainTag.IDENT),
-    ("Integer",DomainTag.Integer),
+    ("Integer",DomainTag.KeyWord),
     ("F",DomainTag.IDENT),
     ("l",DomainTag.IDENT),
     ("o",DomainTag.IDENT),
     ("a",DomainTag.IDENT),
-    ("Float",DomainTag.Float),
+    ("Float",DomainTag.KeyWord),
     ("IDENT",DomainTag.IDENT),
     ("Number",DomainTag.NUMBER),
-    ("::",DomainTag.DOUBLE_COLON),
-    ("->",DomainTag.ARROW),
-    ("=",DomainTag.EQUALS),]
+    ("::",DomainTag.OP),
+    ("->",DomainTag.OP),
+    ("=",DomainTag.OP),]
     list(map(lambda args: g.add_edge(*args), edges))
     list(map(lambda args: g.add_final_vertices(*args), final))
     return g    
@@ -541,8 +535,6 @@ while (token.tag != DomainTag.END_OF_PROGRAM):
 token = lex.next_token()
 print(token) 
 ```
-
-…
 
 # Тестирование
 
@@ -574,19 +566,19 @@ asd23
 ```
 NUMBER (1, 1)-(1, 5): 4545
 IDENT (1, 5)-(1, 8): asd
-EQUALS (2, 1)-(2, 2): =
+OP (2, 1)-(2, 2): =
 IDENT (2, 3)-(2, 6): sad
 IDENT (2, 7)-(2, 10): sad
-EQUALS (2, 11)-(2, 12): =
-EQUALS (2, 12)-(2, 13): =
-DOUBLE_COLON (2, 13)-(2, 15): ::
-EQUALS (2, 15)-(2, 16): =
-EQUALS (2, 16)-(2, 17): =
-EQUALS (2, 17)-(2, 18): =
-ARROW (2, 18)-(2, 20): ->
+OP (2, 11)-(2, 12): =
+OP (2, 12)-(2, 13): =
+OP (2, 13)-(2, 15): ::
+OP (2, 15)-(2, 16): =
+OP (2, 16)-(2, 17): =
+OP (2, 17)-(2, 18): =
+OP (2, 18)-(2, 20): ->
 NUMBER (3, 1)-(3, 9): 15451541
 IDENT (3, 9)-(3, 30): asddsad15155151151515
-EQUALS (3, 30)-(3, 31): =
+OP (3, 30)-(3, 31): =
 COMMENT (4, 1)-(4, 28): {-sadsa ------------------}
 COMMENT (5, 1)-(17, 3): {- multi stoke comment
 asdasdasdasdasdasda

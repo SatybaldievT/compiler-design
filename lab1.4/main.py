@@ -259,17 +259,17 @@ def graph_init():
     ("e",DomainTag.IDENT),
     ("g",DomainTag.IDENT),
     ("e1",DomainTag.IDENT),
-    ("Integer",DomainTag.Integer),
+    ("Integer",DomainTag.KeyWord),
     ("F",DomainTag.IDENT),
     ("l",DomainTag.IDENT),
     ("o",DomainTag.IDENT),
     ("a",DomainTag.IDENT),
-    ("Float",DomainTag.Float),
+    ("Float",DomainTag.KeyWord),
     ("IDENT",DomainTag.IDENT),
     ("Number",DomainTag.NUMBER),
-    ("::",DomainTag.DOUBLE_COLON),
-    ("->",DomainTag.ARROW),
-    ("=",DomainTag.EQUALS),]
+    ("::",DomainTag.OP),
+    ("->",DomainTag.OP),
+    ("=",DomainTag.OP),]
     list(map(lambda args: g.add_edge(*args), edges))
     list(map(lambda args: g.add_final_vertices(*args), final))
     return g    
