@@ -1,3 +1,254 @@
+% Лабораторная работа № 1.4 «Лексический распознаватель»
+% 18 марта 2025 г.
+% Талгат Сатыбалдиев, ИУ9-62Б
+
+# Цель работы
+Целью данной работы является изучение использования детерминированных конечных автоматов с размеченными
+заключительными состояниями (лексических распознавателей) для решения задачи лексического анализа
+
+# Индивидуальный вариант
+Integer, Float, ::, ->, =, комментарии ограничены знаками {-, -}, могут пересекать границы строк текста.
+
+# Реализация
+
+Лексическая структура языка — регулярные выражения для доменов:
+```
+IDENT = [a-zA-Z][a-zA-Z0-9]*
+NUM = [0-9][0-9]*
+KEYWORD = Integer | Float
+OP = :: | -> | = 
+COMMENT {- .* -}
+```
+
+
+Граф детерминированного распознавателя:
+
+![Граф детерминированного распознавателя](pics/det.png)
+
+Реализация распознавателя:
+
+
+Файл `Token.py`:
+```python
+from abc import abstractmethod
+import copy
+import sys
+import unicodedata
+from enum import Enum
+class Position:
+    def __init__(self, text):
+        self.text = text
+        self.line = 1
+        self.pos = 1
+        self.index = 0
+    def update_text(self, new_text):
+        """
+        Обновляет текст и сбрасывает индекс, но сохраняет текущие значения line и pos.
+        """
+        self.text = new_text
+        self.index = 0  # Сбрасываем индекс
+    @property
+    def line(self):
+        return self._line
+
+    @line.setter
+    def line(self, value):
+        self._line = value
+
+    @property
+    def pos(self):
+        return self._pos
+
+    @pos.setter
+    def pos(self, value):
+        self._pos = value
+
+    @property
+    def index(self):
+        return self._index
+
+    @index.setter
+    def index(self, value):
+        self._index = value
+    
+    @property 
+    def cp(self):
+        if self.index == len(self.text):
+            return -1
+        return ord(self.text[self.index])
+    @property 
+    def str(self):
+        if self.index == len(self.text):
+            return ""
+        return self.text[self.index:self.index+1]
+    @property
+    def uc(self):
+        if self.index == len(self.text):
+            return unicodedata.category(' ')
+        return unicodedata.category(self.text[self.index])
+
+    @property
+    def is_white_space(self):
+        return self.index != len(self.text) and self.text[self.index].isspace()
+
+    @property
+    def is_letter(self):
+        return self.index != len(self.text) and self.text[self.index].isalpha()
+
+    @property
+    def is_letter_or_digit(self):
+        return self.index != len(self.text) and self.text[self.index].isalnum()
+
+    @property
+    def is_decimal_digit(self):
+        return self.index != len(self.text) and self.text[self.index].isdigit()
+
+    @property
+    def is_new_line(self):
+        if self.index == len(self.text):
+            return True
+        if self.text[self.index] == '\r' and self.index + 1 < len(self.text):
+            return self.text[self.index + 1] == '\n'
+        return self.text[self.index] == '\n'
+
+    def __iadd__(self, other):
+        if self.index < len(self.text):
+            if self.is_new_line:
+                if self.text[self.index] == '\r':
+                    self.index += 1
+                self.line += 1
+                self.pos = 1
+            else:
+                if unicodedata.category(self.text[self.index]) == 'Cs':
+                    self.index += 1
+                self.pos += 1
+            self.index += 1
+        return self
+    def __isub__(self, other):
+        """Перемещает позицию назад на `other` символов."""
+        for _ in range(other):
+            if self.index <= 0:
+                break  # Нельзя уйти ниже нулевого индекса
+            self.index -= 1  # Перемещаемся на один символ назад
+
+            # Если текущий символ — это символ новой строки, обновляем line и pos
+            if self.index > 0 and self.text[self.index - 1] == '\n':
+                self.line -= 1
+                # Вычисляем pos как длину строки до текущего символа
+                self.pos = self.text.rfind('\n', 0, self.index - 1)
+                if self.pos == -1:
+                    self.pos = self.index
+                else:
+                    self.pos = self.index - self.pos - 1
+            elif self.index > 0 and self.text[self.index - 1] == '\r':
+                # Обработка случая с \r\n
+                if self.index > 1 and self.text[self.index - 2] == '\n':
+                    self.line -= 1
+                    self.pos = self.text.rfind('\n', 0, self.index - 2)
+                    if self.pos == -1:
+                        self.pos = self.index - 1
+                    else:
+                        self.pos = self.index - self.pos - 2
+                else:
+                    self.line -= 1
+                    self.pos = 1
+            else:
+                self.pos -= 1
+        return self
+
+    def __str__(self):
+        return f"({self.line}, {self.pos})"
+
+    def __lt__(self, other):
+        return self.index < other.index
+
+    def __eq__(self, other):
+        return self.index == other.index
+
+    def __le__(self, other):
+        return self.index <= other.index
+
+    def __gt__(self, other):
+        return self.index > other.index
+
+    def __ge__(self, other):
+        return self.index >= other.index
+
+    def __ne__(self, other):
+        return self.index != other.index
+class Fragment:
+    def __init__(self, starting, following):
+        self._starting = copy.copy(starting)  # Копируем starting
+        self._following = copy.copy(following)  # Копируем following
+        
+    @property
+    def starting(self):
+        return self._starting
+
+    @property
+    def following(self):
+        return self._following
+    @property
+    def str(self):
+        return self._starting.text[self._starting.index : self._following.index]
+    
+    def __str__(self):
+        return f"{self.starting}-{self.following}"
+class Message:
+    def __init__(self, is_error, text):
+        self._is_error = is_error
+        self._text = text
+
+    @property
+    def is_error(self):
+        return self._is_error
+
+    @property
+    def text(self):
+        return self._text
+
+    def __str__(self):
+        return f"{'Error' if self.is_error else 'Message'}: {self.text}"
+class DomainTag(Enum):
+    IDENT = 0          # Идентификатор
+    NUMBER = 1         # Число
+    COMMENT = 2 
+    Integer = 3
+    Float = 4
+    DOUBLE_COLON = 5
+    EQUALS = 6
+    ARROW = 7
+    ERROR = 98
+    END_OF_PROGRAM = 99
+    WhiteSpace = 100
+  
+class Token():
+    def __init__(self, tag,value, starting, following):
+        self._tag = tag
+        self._value = value
+        self._coords = Fragment(starting, following)
+    def __init__(self, tag,value, coords):
+        self._tag = tag
+        self._value = value
+        self._coords = coords
+    @property
+    def tag(self):
+        return self._tag
+
+    @property
+    def coords(self):
+        return self._coords
+    @property
+    def get_value(self):
+        return self._value
+    
+    def __str__(self):
+        return f"{self.tag.name} {self.coords}: {self.get_value}"
+
+```
+
+Файл `main.py`:
+```python
 from enum import Enum
 import re
 import Token as tk
@@ -101,7 +352,7 @@ class Graph:
         edges = []
         for vertex in self.graph:
             for adjacent_vertex in self.graph[vertex]:
-                if (adjacent_vertex, vertex) not in edges:  # Чтобы избежать дублирования в неориентированном графе
+                if (adjacent_vertex, vertex) not in edges:  
                     edges.append((vertex, adjacent_vertex))
         return edges
 
@@ -289,3 +540,73 @@ while (token.tag != DomainTag.END_OF_PROGRAM):
     print(token)
 token = lex.next_token()
 print(token) 
+```
+
+…
+
+# Тестирование
+
+Входные данные
+
+```
+4545asd
+= sad sad ==::===->
+15451541asddsad15155151151515=
+{-sadsa ------------------}
+{- multi stoke comment
+asdasdasdasdasdasda
+
+asdasdasdasdasdasda
+das
+
+
+sdadda
+asd23
+123
+
+12{}".;./'---
+-} 
+
+```
+
+Вывод на `stdout`
+
+```
+NUMBER (1, 1)-(1, 5): 4545
+IDENT (1, 5)-(1, 8): asd
+EQUALS (2, 1)-(2, 2): =
+IDENT (2, 3)-(2, 6): sad
+IDENT (2, 7)-(2, 10): sad
+EQUALS (2, 11)-(2, 12): =
+EQUALS (2, 12)-(2, 13): =
+DOUBLE_COLON (2, 13)-(2, 15): ::
+EQUALS (2, 15)-(2, 16): =
+EQUALS (2, 16)-(2, 17): =
+EQUALS (2, 17)-(2, 18): =
+ARROW (2, 18)-(2, 20): ->
+NUMBER (3, 1)-(3, 9): 15451541
+IDENT (3, 9)-(3, 30): asddsad15155151151515
+EQUALS (3, 30)-(3, 31): =
+COMMENT (4, 1)-(4, 28): {-sadsa ------------------}
+COMMENT (5, 1)-(17, 3): {- multi stoke comment
+asdasdasdasdasdasda
+
+asdasdasdasdasdasda
+das
+
+
+sdadda
+asd23
+123
+
+12{}".;./'---
+-}
+END_OF_PROGRAM (18, 1)-(18, 1):
+```
+
+# Вывод
+В ходе выполнения лабораторной работы № 1.4 «Лексический распознаватель» были изучены принципы работы 
+детерминированных конечных автоматов (ДКА) с размеченными заключительными состояниями для решения задачи
+лексического анализа. Была реализована программа, способная распознавать лексемы, соответствующие заданному
+индивидуальному варианту: ключевые слова (Integer, Float), операторы (::, ->, =), числа, идентификаторы 
+и комментарии, ограниченные знаками {- и -}.
