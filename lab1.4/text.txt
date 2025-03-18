@@ -1,4 +1,4 @@
-{-asdasdasdasdasd-} :: -> Integer Integ
+4545asd
 {- multi stoke comment
 asdasdasdasdasdasda
 
@@ -11,4 +11,4 @@ asd23
 123
 
 12{}".;./'---
--}
+-} 

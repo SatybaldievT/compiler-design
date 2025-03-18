@@ -1,7 +1,74 @@
+from enum import Enum
 import re
 import Token as tk
 import copy
 from Token import DomainTag
+class CLS(Enum):
+    CHR_SPEC = 0          # строчные символы без I n t e g r F l o a t : - > 
+    NUM = 1               # Число 
+    I = 3                # Символ 'I'
+    n = 4                # Символ 'n'
+    t = 5                # Символ 't'
+    e = 6                # Символ 'e'
+    g = 7                # Символ 'g'
+    r = 8                # Символ 'r'
+    F = 9                # Символ 'F'
+    l = 10               # Символ 'l'
+    a = 11               # Символ 'a'
+    o = 12               # Символ 'a'
+    COLON = 13           # Символ ':'
+    GT = 14              # Символ '>'
+    MIN = 15             # Символ '-'
+    OAS = 16
+    CAS = 17
+    EQ = 18
+    EOF = 99             # Конец файла (End of File)
+    WS = 100             # Пробельный символ (Whitespace)
+    Other = 101          # другие символы 
+def getCLS(x: str) -> CLS:
+    if len(x) != 1:
+        raise ValueError("Input must be a single character")
+
+    if x.isdigit():
+        return CLS.NUM
+    elif x == 'I':
+        return CLS.I
+    elif x == 'n':
+        return CLS.n
+    elif x == 't':
+        return CLS.t
+    elif x == 'e':
+        return CLS.e
+    elif x == 'g':
+        return CLS.g
+    elif x == 'r':
+        return CLS.r
+    elif x == 'F':
+        return CLS.F
+    elif x == 'l':
+        return CLS.l
+    elif x == 'o':
+        return CLS.o
+    elif x == 'a':
+        return CLS.a
+    elif x == ':':
+        return CLS.COLON
+    elif x == '>':
+        return CLS.GT
+    elif x == '-':
+        return CLS.MIN
+    elif x == '{':
+        return CLS.OAS
+    elif x == '}':
+        return CLS.CAS
+    elif x == '=':
+        return CLS.EQ
+    elif x.isspace():
+        return CLS.WS
+    elif x.isalpha() and x not in {'I', 'n', 't', 'e', 'g', 'r', 'F', 'l', 'o', 'a'}:
+        return CLS.CHR_SPEC
+    else:
+        return CLS.Other  
 class Graph:
     def __init__(self):
         self.graph = {}
@@ -11,12 +78,17 @@ class Graph:
         if vertex not in self.graph:
             self.graph[vertex] = set()
 
-    def add_edge(self, vertex1, vertex2,regex):
+    def add_edge(self, vertex1, vertex2, regex):
         if vertex1 not in self.graph:
             self.add_vertex(vertex1)
         if vertex2 not in self.graph:
             self.add_vertex(vertex2)
-        self.graph[vertex1].add((vertex2,regex))
+        
+        if isinstance(regex, list):
+            for r in regex:
+                self.graph[vertex1].add((vertex2, r))
+        else:
+            self.graph[vertex1].add((vertex2, regex))
     def add_final_vertices(self,vertex,domain_name):
         if vertex not in self.graph:
             self.add_vertex(vertex)
@@ -82,25 +154,27 @@ class Graph:
                     final_vertices_reached.append((current_vertex, pos))
                 
                 return True  # Строка полностью пройдена
-
+            
+            # print(current_vertex , " \" ",pos.str,"\"",end= " ")
+            
             for neighbor, regex in self.graph.get(current_vertex, []):
-                
-                match = re.match(regex, pos.str)
-                if match:
-                    matched_length = match.end()
-                    _pos = copy.copy(pos)
-                    _pos+=1
-                    
-                    if matched_length > 0 and dfs(neighbor, _pos):
-                        return True
+                _pos = copy.copy(pos)
+                _pos+=1
+
+                if getCLS(pos.str)==regex  and dfs(neighbor, _pos):
+                    if current_vertex in self.final:
+                        final_vertices_reached.append((current_vertex, pos))
+                    return True
             if current_vertex in self.final:
-                            final_vertices_reached.append((current_vertex, pos))
+                final_vertices_reached.append((current_vertex, pos))
             return False
 
         dfs(start_vertex, pos)
         if len(final_vertices_reached) == 0 :
-             fragm = tk.Fragment(prev_pos,prev_pos)
+             ps = copy.copy(prev_pos)
              prev_pos+=1
+             fragm = tk.Fragment(ps,prev_pos)
+             
              return (tk.Token(DomainTag.ERROR,fragm.str,fragm),prev_pos)
         
         vertex,pos =final_vertices_reached[0]
@@ -125,48 +199,57 @@ class Lexer:
 def graph_init():
     g = Graph()
     edges = [
-   ("Start","WhiteSpace", r"[\s\t\n\r]"),
-   ("WhiteSpace","WhiteSpace", r"[\s\t\n\r]"),
-   ("Start","Number", r'[0-9]'),
-   ("Number","Number", r'[0-9]'),
-   ("Start","IDENT", r'(?![IF])[A-Za-z]'),
-   ("Start","I", r'I'),
-   ("Start","F", r'F'),
-   ("I","n", r'n'),
-   ("I","IDENT", r'(?![IFn])[A-Za-z0-9]'),
-   ("n","t", r't'),
-   ("n","IDENT", r'(?![IFt])[A-Za-z0-9]'),
-   ("t","e", r'e'),
-   ("t","IDENT", r'(?![IFe])[A-Za-z0-9]'),
-   ("e","g", r'g'),
-   ("e","IDENT", r'(?![IFg])[A-Za-z0-9]'),
-   ("g","e1", r'e'),
-   ("g","IDENT", r'(?![IFe])[A-Za-z0-9]'),
-   ("e1","Integer", r'r'),
-   ("e1","IDENT", r'(?![IFr])[A-Za-z0-9]'),
-   ("Integer","IDENT", r'(?![IF])[A-Za-z0-9]'),
-   ("F", "l", r'l'),
-   ("F", "IDENT", r'(?![IFl])[A-Za-z0-9]'),
-   ("l", "o", r'o'),
-   ("l", "IDENT", r'(?![IFo])[A-Za-z0-9]'),
-   ("o", "a", r'a'),
-   ("o", "IDENT", r'(?![IFa])[A-Za-z0-9]'),
-   ("a", "Float", r't'),
-   ("a", "IDENT", r'(?![IFt])[A-Za-z0-9]'),
-   ("Float", "IDENT",r'(?![IF])[A-Za-z0-9]') , 
-   ("IDENT","IDENT",r'(?![IF])[A-Za-z0-9]'),
-   ("Start","{", r'{'),
-   ("{","-", r'-'),
-   ("-","-", r'[^-]'),
-   ("-","_", r'-'),
-   ("_","_", r'-'),
-    ("_","-", r'[^-}]'),
-   ("_","Comment", r'}'),
-   ("Start",":", r':'),
-   (":","::", r':'),
-   ("Start","-.>", r'-'),
-   ("-.>","->", r'>'),
-   ("Start","=", r'=')]
+   ("Start","WhiteSpace", CLS.WS),
+   ("WhiteSpace","WhiteSpace", CLS.WS),
+   ("Start","Number", CLS.NUM),
+   ("Number","Number", CLS.NUM),
+   ("Start","IDENT",[CLS.CHR_SPEC, CLS.n,CLS.t,CLS.e,CLS.g,CLS.r,CLS.l,CLS.o,CLS.a]),
+   ("Start","I", CLS.I),
+   ("Start","F",CLS.F),
+   ("I","n", CLS.n),
+   ("I","IDENT", [CLS.CHR_SPEC,CLS.NUM,CLS.I,CLS.t,CLS.e,CLS.g,CLS.r,CLS.F,CLS.l,CLS.o,CLS.a]),
+   ("n","t", CLS.t),
+   ("n","IDENT", [CLS.CHR_SPEC,CLS.NUM,CLS.I,CLS.n,CLS.e,CLS.g,CLS.r,CLS.F,CLS.l,CLS.o,CLS.a]),
+   ("t","e", CLS.e),
+   ("t","IDENT", [CLS.CHR_SPEC,CLS.NUM,CLS.I,CLS.n,CLS.t,CLS.g,CLS.r,CLS.F,CLS.l,CLS.o,CLS.a]),
+   ("e","g", CLS.g),
+   ("e","IDENT",[CLS.CHR_SPEC,CLS.NUM,CLS.I,CLS.n,CLS.t,CLS.e,CLS.r,CLS.F,CLS.l,CLS.o,CLS.a]),
+   ("g","e1", CLS.e),
+   ("g","IDENT", [CLS.CHR_SPEC,CLS.NUM,CLS.I,CLS.n,CLS.t,CLS.g,CLS.r,CLS.F,CLS.l,CLS.o,CLS.a]),
+   ("e1","Integer", CLS.r),
+   ("e1","IDENT", [CLS.CHR_SPEC,CLS.NUM,CLS.I,CLS.n,CLS.t,CLS.e,CLS.g,CLS.F,CLS.l,CLS.o,CLS.a]),
+   ("Integer","IDENT",[CLS.CHR_SPEC,CLS.NUM,CLS.I,CLS.n,CLS.t,CLS.e,CLS.g,CLS.r,CLS.F,CLS.l,CLS.o,CLS.a]),
+   ("F", "l", CLS.l),
+   ("F", "IDENT", [CLS.CHR_SPEC,CLS.NUM,CLS.I,CLS.n,CLS.t,CLS.e,CLS.g,CLS.r,CLS.F,CLS.l,CLS.o,CLS.a]),
+   ("l", "o", CLS.o),
+   ("l", "IDENT", [CLS.CHR_SPEC,CLS.NUM,CLS.I,CLS.n,CLS.t,CLS.e,CLS.g,CLS.r,CLS.F,CLS.l,CLS.a]),
+   ("o", "a", CLS.a),
+   ("o", "IDENT",[CLS.CHR_SPEC,CLS.NUM,CLS.I,CLS.n,CLS.t,CLS.e,CLS.g,CLS.r,CLS.F,CLS.l,CLS.o]),
+   ("a", "Float", CLS.t),
+   ("a", "IDENT", [CLS.CHR_SPEC,CLS.NUM,CLS.I,CLS.n,CLS.e,CLS.g,CLS.r,CLS.F,CLS.l,CLS.o,CLS.a]),
+   ("Float", "IDENT",[CLS.CHR_SPEC,CLS.NUM,CLS.I,CLS.n,CLS.t,CLS.e,CLS.g,CLS.r,CLS.F,CLS.l,CLS.o,CLS.a]) , 
+   ("IDENT","IDENT",[CLS.CHR_SPEC,CLS.NUM,CLS.I,CLS.n,CLS.t,CLS.e,CLS.g,CLS.r,CLS.F,CLS.l,CLS.o,CLS.a]),
+   ("Start","{", CLS.OAS),
+   ("{","-", CLS.MIN),
+   ("-","-", [CLS.CHR_SPEC,CLS.NUM,
+              CLS.I,CLS.n,CLS.t,CLS.e,CLS.g,CLS.r,
+              CLS.F,CLS.l,CLS.o,CLS.a,
+              CLS.Other,CLS.CAS,CLS.COLON,CLS.WS,CLS.GT,CLS.OAS,CLS.CAS]),
+    ("_","-", [CLS.CHR_SPEC,CLS.NUM,
+              CLS.I,CLS.n,CLS.t,CLS.e,CLS.g,CLS.r,
+              CLS.F,CLS.l,CLS.o,CLS.a,
+              CLS.Other,CLS.CAS,CLS.COLON,CLS.WS,CLS.GT,CLS.OAS]),
+    ("-","_", CLS.MIN),
+    ("_","_", CLS.MIN),
+    ("_","Comment", CLS.CAS),
+    ("Start",":.:",CLS.COLON) ,
+    (":.:","::",CLS.COLON) ,
+    
+    ("Start","-.>",CLS.MIN) ,
+    ("-.>","->",CLS.GT) ,
+    
+    ("Start","=",CLS.EQ) ,
+   ]
     final = [
     ("WhiteSpace",DomainTag.WhiteSpace),
     ("Comment",DomainTag.COMMENT),
@@ -191,16 +274,16 @@ def graph_init():
     list(map(lambda args: g.add_final_vertices(*args), final))
     return g    
 g = graph_init()
-print(g)
-# input_string = ""
-# with open('text.txt', 'r', encoding='utf-8') as file:
-#     # Читаем содержимое файла в строку
-#     input_string = file.read()
+# print(g)
+input_string = ""
+with open('text.txt', 'r', encoding='utf-8') as file:
+    # Читаем содержимое файла в строку
+    input_string = file.read()
 
-# lex = Lexer(g,input_string)
+lex = Lexer(g,input_string)
 
-# token = lex.next_token()
-# print(token) 
-# while (token.tag != DomainTag.END_OF_PROGRAM):
-#     token = lex.next_token()
-#     print(token) 
+token = lex.next_token()
+print(token) 
+while (token.tag != DomainTag.END_OF_PROGRAM):
+    token = lex.next_token()
+    print(token) 
