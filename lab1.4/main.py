@@ -25,50 +25,40 @@ class CLS(Enum):
     EOF = 99             # Конец файла (End of File)
     WS = 100             # Пробельный символ (Whitespace)
     Other = 101          # другие символы 
+# Создание словаря
+char_to_cls = {
+    'I': CLS.I,
+    'n': CLS.n,
+    't': CLS.t,
+    'e': CLS.e,
+    'g': CLS.g,
+    'r': CLS.r,
+    'F': CLS.F,
+    'l': CLS.l,
+    'a': CLS.a,
+    'o': CLS.o,
+    ':': CLS.COLON,
+    '>': CLS.GT,
+    '-': CLS.MIN,
+    '{': CLS.OAS,
+    '}': CLS.CAS,
+    '=': CLS.EQ
+}
 def getCLS(x: str) -> CLS:
     if len(x) != 1:
         raise ValueError("Input must be a single character")
-
-    if x.isdigit():
-        return CLS.NUM
-    elif x == 'I':
-        return CLS.I
-    elif x == 'n':
-        return CLS.n
-    elif x == 't':
-        return CLS.t
-    elif x == 'e':
-        return CLS.e
-    elif x == 'g':
-        return CLS.g
-    elif x == 'r':
-        return CLS.r
-    elif x == 'F':
-        return CLS.F
-    elif x == 'l':
-        return CLS.l
-    elif x == 'o':
-        return CLS.o
-    elif x == 'a':
-        return CLS.a
-    elif x == ':':
-        return CLS.COLON
-    elif x == '>':
-        return CLS.GT
-    elif x == '-':
-        return CLS.MIN
-    elif x == '{':
-        return CLS.OAS
-    elif x == '}':
-        return CLS.CAS
-    elif x == '=':
-        return CLS.EQ
-    elif x.isspace():
-        return CLS.WS
-    elif x.isalpha() and x not in {'I', 'n', 't', 'e', 'g', 'r', 'F', 'l', 'o', 'a'}:
-        return CLS.CHR_SPEC
-    else:
-        return CLS.Other  
+    match x :
+        case char_to_cls[x]:
+            return char_to_cls[x]
+        case x.isdigit():
+            return CLS.NUM
+        case x.isspace():
+            return CLS.WS
+        case x.isalpha():
+            return CLS.CHR_SPEC
+        case _:
+            return CLS.Other  
+        
 class Graph:
     def __init__(self):
         self.graph = {}

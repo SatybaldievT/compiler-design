@@ -346,7 +346,7 @@ class Graph:
         edges = []
         for vertex in self.graph:
             for adjacent_vertex in self.graph[vertex]:
-                if (adjacent_vertex, vertex) not in edges:  # Чтобы избежать дублирования в неориентированном графе
+                if (adjacent_vertex, vertex) not in edges:  
                     edges.append((vertex, adjacent_vertex))
         return edges
 
@@ -472,7 +472,7 @@ def graph_init():
    ("o", "IDENT",[CLS.CHR_SPEC,CLS.NUM,CLS.I,CLS.n,CLS.t,CLS.e,CLS.g,CLS.r,CLS.F,CLS.l,CLS.o]),
    ("a", "Float", CLS.t),
    ("a", "IDENT", [CLS.CHR_SPEC,CLS.NUM,CLS.I,CLS.n,CLS.e,CLS.g,CLS.r,CLS.F,CLS.l,CLS.o,CLS.a]),
-   ("Float", "IDENT",[CLS.CHR_SPEC,CLS.NUM,CLS.I,CLS.n,CLS.t,CLS.e,CLS.g,CLS.r,CLS.F,CLS.l,CLS.o,CLS.a]) , 
+   ("Float", "IDENT",[CLS.CHR_SPEC,CLS.NUM,CLS.I,CLS.n,CLS.t,CLS.e,CLS.g,CLS.r,CLS.F,CLS.l,CLS.o,CLS.a]),
    ("IDENT","IDENT",[CLS.CHR_SPEC,CLS.NUM,CLS.I,CLS.n,CLS.t,CLS.e,CLS.g,CLS.r,CLS.F,CLS.l,CLS.o,CLS.a]),
    ("Start","{", CLS.OAS),
    ("{","-", CLS.MIN),
